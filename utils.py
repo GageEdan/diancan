@@ -28,20 +28,33 @@ def send_order_email(username, items, total):
     if not notify_email or not smtp_pass:
         return False
 
+    try:
+        total_f = float(total) if total else 0.0
+    except (TypeError, ValueError):
+        total_f = 0.0
+
     lines = ['<h2>新订单通知</h2>',
              '<p>用户 <b>%s</b> 刚刚下单：</p>' % username,
              '<table border="1" cellpadding="8" cellspacing="0" style="border-collapse:collapse;width:100%%;max-width:500px">',
              '<tr style="background:#FF6B6B;color:#fff;"><th>菜品</th><th>单价</th><th>数量</th><th>小计</th></tr>']
     for item in items:
-        subtotal = item['price'] * item['qty']
+        try:
+            price = float(item.get('price', 0))
+        except (TypeError, ValueError):
+            price = 0.0
+        try:
+            qty = int(item.get('qty', 1))
+        except (TypeError, ValueError):
+            qty = 1
+        subtotal = price * qty
         lines.append('<tr><td>%s %s</td><td>¥%.2f</td><td>%d</td><td>¥%.2f</td></tr>' %
-                     (item.get('emoji', ''), item['name'], item['price'], item['qty'], subtotal))
-    lines.append('<tr style="font-weight:bold;background:#FFF0F0;"><td colspan="3">合计</td><td>¥%.2f</td></tr>' % total)
+                     (item.get('emoji', ''), item.get('name', '菜品'), price, qty, subtotal))
+    lines.append('<tr style="font-weight:bold;background:#FFF0F0;"><td colspan="3">合计</td><td>¥%.2f</td></tr>' % total_f)
     lines.append('</table>')
     lines.append('<p style="color:#999;">来自 多巴胺美食点餐系统</p>')
 
     msg = MIMEText('\n'.join(lines), 'html', 'utf-8')
-    msg['Subject'] = '新订单 - %s 下单 ¥%.2f' % (username, total)
+    msg['Subject'] = '新订单 - %s 下单 ¥%.2f' % (username, total_f)
     msg['From'] = notify_email
     msg['To'] = notify_email
 

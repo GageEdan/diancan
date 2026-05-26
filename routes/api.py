@@ -1,5 +1,6 @@
 import os
 import uuid
+import traceback
 
 from flask import Blueprint, request, jsonify, session
 
@@ -234,9 +235,11 @@ def api_checkout():
     d = request.get_json()
     items = d.get('items', [])
     total = d.get('total', 0)
+    if total is None:
+        total = 0
 
     if not items:
-        return jsonify({'ok': False, 'msg': '订单数据有误'})
+        return jsonify({'ok': False, 'msg': '订单数据有误'}), 400
 
     user = get_user_by_username(session['username'])
     if not user:
@@ -245,14 +248,14 @@ def api_checkout():
     try:
         create_order(user['id'], total, items, username=session['username'])
     except Exception as e:
-        print(f'[错误] 创建订单失败: {e}')
+        traceback.print_exc()
         return jsonify({'ok': False, 'msg': '订单提交失败，请稍后重试'}), 500
 
     username = session['username']
     try:
         email_sent = send_order_email(username, items, total)
     except Exception as e:
-        print(f'[错误] 发送邮件失败: {e}')
+        traceback.print_exc()
         email_sent = False
 
     return jsonify({

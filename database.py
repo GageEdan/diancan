@@ -461,7 +461,8 @@ def create_order(user_id, total_amount, items, username=None):
         orders.append({
             'id': new_id, 'user_id': user_id,
             'username': username or '未知用户',
-            'total_amount': total_amount, 'status': 'pending', 'items': items,
+            'total_amount': float(total_amount) if total_amount else 0.0,
+            'status': 'pending', 'items': items,
         })
         _json_write('orders.json', orders)
         return new_id
@@ -499,7 +500,7 @@ def get_all_orders():
             result.append({
                 'id': o['id'],
                 'username': o.get('username', '未知用户'),
-                'total_amount': float(o['total_amount']),
+                'total_amount': float(o.get('total_amount', 0) or 0),
                 'status': o.get('status', 'pending'),
                 'created_at': o.get('created_at', ''),
                 'items': items,
@@ -517,7 +518,7 @@ def get_all_orders():
         """)
         orders = cur.fetchall()
         for o in orders:
-            o['total_amount'] = float(o['total_amount'])
+            o['total_amount'] = float(o['total_amount'] or 0)
             if hasattr(o['created_at'], 'strftime'):
                 o['created_at'] = o['created_at'].strftime('%Y-%m-%d %H:%M:%S')
             cur.execute("""
