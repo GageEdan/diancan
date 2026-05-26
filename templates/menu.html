@@ -1125,7 +1125,8 @@ function checkout() {
       showModal('🎉', '下单成功！', msg, function() {
         cart = {};
         saveCart();
-        toggleCart();
+        var panel = document.getElementById('cart-panel');
+        if (panel.classList.contains('open')) toggleCart();
         renderDishes();
         fetchOrders();
         fetchRevenue();
@@ -1462,13 +1463,19 @@ function showModal(emoji, title, text, cb) {
     '<div class="modal-emoji">' + emoji + '</div>' +
     '<div class="modal-title">' + title + '</div>' +
     '<div class="modal-text">' + text + '</div>' +
+    '<div class="modal-btns">' +
+    '<button class="btn btn-outline" id="modal-cancel">取消</button>' +
     '<button class="btn btn-primary" id="modal-ok">好的~</button>' +
+    '</div>' +
     '</div>';
   document.body.appendChild(overlay);
   overlay.querySelector('#modal-ok').addEventListener('click', function() {
     overlay.remove(); if (cb) cb();
   });
-  overlay.addEventListener('click', function(e) { if (e.target === overlay) { overlay.remove(); if (cb) cb(); } });
+  overlay.querySelector('#modal-cancel').addEventListener('click', function() {
+    overlay.remove();
+  });
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
 }
 </script>
 </body>
