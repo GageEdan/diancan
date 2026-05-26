@@ -1,0 +1,225 @@
+/* ===== 多巴胺美食点餐系统 - 全局样式 ===== */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&display=swap');
+
+:root {
+  --coral: #FF6B6B;
+  --orange: #FFA94D;
+  --yellow: #FFD43B;
+  --green: #69DB7C;
+  --teal: #38D9A9;
+  --blue: #74C0FC;
+  --purple: #CC5DE8;
+  --pink: #F783AC;
+  --hotpink: #FF6EB4;
+  --lime: #A9E34B;
+  --bg: #FFF4F0;
+  --card: #FFFFFF;
+  --text: #3D3055;
+  --shadow: 0 4px 15px rgba(255, 107, 107, 0.15);
+  --radius: 18px;
+  --radius-sm: 10px;
+}
+
+html { overflow-y: scroll; }
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: linear-gradient(135deg, #FFF4F0 0%, #FFE8F0 30%, #FFF0E8 60%, #F0E8FF 100%);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===== 通用按钮 ===== */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  border: none; border-radius: 50px; padding: 12px 28px;
+  font-size: 16px; font-weight: 700; cursor: pointer;
+  transition: all 0.25s ease; font-family: inherit;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
+.btn:active { transform: translateY(0); }
+
+.btn-primary { background: linear-gradient(135deg, var(--coral), var(--orange)); color: #fff; }
+.btn-success { background: linear-gradient(135deg, var(--green), var(--teal)); color: #fff; }
+.btn-purple { background: linear-gradient(135deg, var(--purple), var(--pink)); color: #fff; }
+.btn-yellow { background: linear-gradient(135deg, var(--yellow), var(--orange)); color: #fff; }
+.btn-outline { background: #fff; color: var(--coral); border: 2px solid var(--coral); box-shadow: none; }
+
+.btn-sm { padding: 8px 18px; font-size: 13px; border-radius: 30px; }
+.btn-lg { padding: 16px 40px; font-size: 18px; border-radius: 60px; }
+.btn-block { width: 100%; }
+
+/* ===== 表单 ===== */
+.input-group { margin-bottom: 18px; }
+.input-group label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 14px; color: #666; }
+.input-field {
+  width: 100%; padding: 14px 18px; border: 2px solid #F0E0E0;
+  border-radius: var(--radius-sm); font-size: 15px; font-family: inherit;
+  transition: border-color 0.2s; outline: none; background: #FFFAFA;
+}
+.input-field:focus { border-color: var(--coral); }
+
+/* ===== Toast 弹窗 ===== */
+.toast {
+  position: fixed; top: 30px; left: 50%; transform: translateX(-50%);
+  padding: 14px 28px; border-radius: 50px; font-weight: 700; font-size: 15px;
+  color: #fff; z-index: 9999; pointer-events: none;
+  animation: toastIn 0.4s ease, toastOut 0.4s ease 2.2s forwards;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+}
+.toast-success { background: linear-gradient(135deg, var(--green), var(--teal)); }
+.toast-error { background: linear-gradient(135deg, var(--coral), var(--orange)); }
+.toast-info { background: linear-gradient(135deg, var(--blue), var(--purple)); }
+
+@keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(-20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+@keyframes toastOut { from { opacity: 1; } to { opacity: 0; } }
+
+/* ===== Modal 弹窗 ===== */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+  display: flex; align-items: center; justify-content: center; z-index: 999;
+  animation: fadeIn 0.25s ease;
+}
+.modal-box {
+  background: #fff; border-radius: 24px; padding: 30px 28px;
+  text-align: center; max-width: 380px; width: 90%;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+  animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.modal-box .modal-emoji { font-size: 64px; margin-bottom: 12px; }
+.modal-box .modal-title { font-size: 22px; font-weight: 900; margin-bottom: 8px; color: var(--coral); }
+.modal-box .modal-text { font-size: 15px; color: #777; margin-bottom: 20px; line-height: 1.6; }
+.modal-box .btn { min-width: 120px; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes popIn { from { opacity: 0; transform: scale(0.7); } to { opacity: 1; transform: scale(1); } }
+
+/* ===== 管理员样式 ===== */
+.admin-card {
+  border: 2px dashed #FFCCD5;
+}
+.admin-actions {
+  position: absolute; top: 8px; right: 8px;
+  display: flex; gap: 4px; z-index: 5;
+}
+.admin-btn {
+  width: 30px; height: 30px; border-radius: 50%;
+  border: none; font-size: 14px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.2s; background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.admin-btn:hover { transform: scale(1.2); }
+.admin-edit-btn { color: var(--blue); }
+.admin-del-btn { color: var(--coral); }
+
+#admin-toggle.admin-active {
+  background: linear-gradient(135deg, var(--purple), var(--pink));
+  color: #fff;
+  border-color: transparent;
+}
+
+.dish-modal { max-width: 420px; width: 92%; }
+
+/* ===== 图片上传 ===== */
+.upload-input {
+  padding: 12px 14px; cursor: pointer;
+}
+.upload-input::file-selector-button {
+  padding: 8px 18px; border-radius: 50px; border: none;
+  background: linear-gradient(135deg, var(--coral), var(--orange));
+  color: #fff; font-weight: 700; font-family: inherit; cursor: pointer;
+  margin-right: 12px; transition: transform 0.2s;
+}
+.upload-input::file-selector-button:hover { transform: scale(1.05); }
+.upload-preview-img {
+  max-width: 100%; max-height: 180px; border-radius: 14px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+}
+
+/* ===== 菜品图片 ===== */
+.dish-img-wrap {
+  position: relative;
+  width: 100%; height: 140px; overflow: hidden;
+  border-radius: 14px; margin-bottom: 8px;
+  background: #FFF5F5;
+  display: flex; align-items: center; justify-content: center;
+}
+.dish-img {
+  position: relative; z-index: 1;
+  width: 100%; height: 100%; object-fit: cover;
+}
+.dish-img-wrap .dish-emoji {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 48px;
+}
+
+.c-img {
+  width: 40px; height: 40px; border-radius: 8px;
+  object-fit: cover; flex-shrink: 0;
+}
+
+.check-img {
+  width: 28px; height: 28px; border-radius: 6px;
+  object-fit: cover; vertical-align: middle;
+}
+
+.modal-img-wrap {
+  margin-bottom: 8px;
+}
+.modal-dish-img {
+  width: 120px; height: 120px; border-radius: 16px; object-fit: cover;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+/* ===== 头像组件 ===== */
+.avatar-wrap {
+  width: 38px; height: 38px; border-radius: 50%; cursor: pointer;
+  overflow: hidden; flex-shrink: 0;
+  border: 2px solid #F0E0E0; transition: border-color 0.2s, transform 0.2s;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #FFE0D0, #FFD0E0);
+}
+.avatar-wrap:hover { border-color: var(--coral); transform: scale(1.1); }
+.avatar-img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.avatar-fallback {
+  font-size: 20px; line-height: 1;
+}
+
+/* ===== 个人信息弹窗 ===== */
+.profile-modal { max-width: 400px; width: 92%; }
+.profile-avatar-section {
+  display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;
+}
+.profile-avatar {
+  width: 100px; height: 100px; border-radius: 50%; object-fit: cover;
+  border: 3px solid var(--coral); cursor: pointer;
+  box-shadow: 0 4px 20px rgba(255,107,107,0.3);
+  transition: transform 0.2s;
+  background: linear-gradient(135deg, #FFE0D0, #FFD0E0);
+}
+.profile-avatar:hover { transform: scale(1.05); }
+.profile-avatar-fb {
+  width: 100px; height: 100px; border-radius: 50%;
+  border: 3px solid var(--coral);
+  box-shadow: 0 4px 20px rgba(255,107,107,0.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 48px;
+  background: linear-gradient(135deg, #FFE0D0, #FFD0E0);
+}
+.profile-avatar-hint {
+  font-size: 12px; color: #bbb; margin-top: 8px;
+}
+
+/* ===== 响应式 ===== */
+@media (max-width: 768px) {
+  .btn { padding: 10px 22px; font-size: 14px; }
+  .btn-lg { padding: 14px 32px; font-size: 16px; }
+}

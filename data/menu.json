@@ -1,0 +1,50 @@
+[
+  {
+    "id": 1,
+    "name": "黄萌鸡",
+    "price": 0.0,
+    "category": "米饭",
+    "emoji": "🍽️",
+    "image": ""
+  },
+  {
+    "id": 2,
+    "name": "关东煮",
+    "price": 0.0,
+    "category": "米饭",
+    "emoji": "🍽️",
+    "image": ""
+  },
+  {
+    "id": 3,
+    "name": "盖饭",
+    "price": 0.0,
+    "category": "米饭",
+    "emoji": "🍽️",
+    "image": ""
+  },
+  {
+    "id": 4,
+    "name": "沙县",
+    "price": 0.0,
+    "category": "米饭",
+    "emoji": "🍽️",
+    "image": ""
+  },
+  {
+    "id": 5,
+    "name": "卤菜",
+    "price": 0.0,
+    "category": "米饭",
+    "emoji": "🍽️",
+    "image": ""
+  },
+  {
+    "id": 6,
+    "name": "奶奶",
+    "price": 99999.0,
+    "category": "嘘",
+    "emoji": "🍽️",
+    "image": ""
+  }
+]

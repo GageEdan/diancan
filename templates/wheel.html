@@ -1,0 +1,452 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>幸运轮盘 - 不知道吃什么</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<style>
+  body { overflow-y: scroll; }
+
+  .wheel-topbar {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(255,255,255,0.94); backdrop-filter: blur(12px);
+    padding: 12px 20px; display: flex; align-items: center; gap: 14px;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.06);
+  }
+  .wheel-topbar .brand { font-size: 22px; font-weight: 900; color: var(--coral); }
+
+  .wheel-layout {
+    display: flex; gap: 0; min-height: calc(100vh - 64px);
+  }
+
+  /* ===== 左侧选菜面板 ===== */
+  .select-panel {
+    width: 380px; min-width: 300px; flex-shrink: 0;
+    background: #fff; padding: 20px; overflow-y: auto;
+    border-right: 1px solid #F5F0F0;
+    max-height: calc(100vh - 64px);
+  }
+  .select-panel h3 { font-size: 18px; font-weight: 900; margin-bottom: 6px; color: var(--purple); }
+  .select-panel .hint { font-size: 13px; color: #aaa; margin-bottom: 16px; }
+  .select-panel .count-info {
+    font-size: 14px; font-weight: 700; margin-bottom: 12px;
+    padding: 8px 14px; border-radius: 50px; background: #FFF5F5;
+  }
+  .select-panel .count-info.warn { background: #FFF0E0; color: var(--orange); }
+  .select-panel .count-info.ok { background: #F0FFF4; color: var(--green); }
+
+  .cat-group { margin-bottom: 18px; }
+  .cat-group-title {
+    font-weight: 900; font-size: 15px; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 8px;
+    cursor: pointer; user-select: none;
+  }
+  .cat-group-title .arrow { transition: transform 0.2s; font-size: 12px; }
+  .cat-group-title .arrow.open { transform: rotate(90deg); }
+  .cat-dishes { display: flex; flex-direction: column; gap: 4px; }
+
+  .dish-check {
+    display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+    border-radius: 10px; cursor: pointer; transition: background 0.15s;
+    font-size: 14px; font-weight: 500;
+  }
+  .dish-check:hover { background: #FFF8F8; }
+  .dish-check input[type="checkbox"] { display: none; }
+  .dish-check .cb {
+    width: 22px; height: 22px; border-radius: 6px; border: 2px solid #E0D0D0;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.2s; font-size: 13px; color: #fff;
+  }
+  .dish-check input:checked + .cb {
+    background: var(--coral); border-color: var(--coral);
+  }
+  .dish-check input:checked + .cb::after { content: '✓'; }
+
+  .select-actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+
+  /* ===== 右侧轮盘区域 ===== */
+  .wheel-area {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 20px; gap: 20px;
+    background: linear-gradient(180deg, #FFF8F5 0%, #FFF0F8 100%);
+  }
+
+  .wheel-container {
+    position: relative; display: flex; align-items: center; justify-content: center;
+  }
+  .wheel-pointer {
+    position: absolute; top: -22px; left: 50%;
+    width: 28px; height: 44px;
+    background: linear-gradient(180deg, #FF8787, #FF6B6B, #E85555);
+    clip-path: polygon(50% 0%, 100% 38%, 50% 100%, 0% 38%);
+    transform: translateX(-50%);
+    filter: drop-shadow(0 3px 6px rgba(255,107,107,0.35));
+    z-index: 10; pointer-events: none;
+  }
+  .wheel-spin-wrap {
+    transition: transform 3s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+  }
+
+  .spin-btn {
+    width: 90px; height: 90px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--coral), var(--orange));
+    color: #fff; font-size: 20px; font-weight: 900; border: 5px solid #fff;
+    cursor: pointer; box-shadow: 0 6px 25px rgba(255,107,107,0.35);
+    transition: all 0.25s; position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%); z-index: 5;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .spin-btn:hover { transform: translate(-50%, -50%) scale(1.08); }
+  .spin-btn:active { transform: translate(-50%, -50%) scale(0.95); }
+  .spin-btn.spinning { pointer-events: none; opacity: 0.7; }
+
+  #wheelCanvas { display: block; }
+
+  /* ===== 移动端适配 ===== */
+  @media (max-width: 768px) {
+    .wheel-layout { flex-direction: column; }
+    .select-panel {
+      width: 100%; min-width: 0; max-height: none;
+      border-right: none; border-bottom: 1px solid #F5F0F0;
+      padding: 14px;
+    }
+    .wheel-area { padding: 16px; min-height: 60vh; }
+    .select-actions { justify-content: center; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wheel-topbar">
+  <span class="brand">🎡 幸运轮盘</span>
+  <span style="font-size:15px;color:#999;">不知道吃什么？交给命运吧！</span>
+  <span style="flex:1;"></span>
+  <a href="/menu" class="btn btn-outline btn-sm">📋 返回菜单</a>
+  <div class="avatar-wrap" id="avatar-wrap" onclick="location.href='/menu'" title="返回菜单查看个人信息" style="margin-left:4px;">
+    <img class="avatar-img" id="topbar-avatar" src="" alt="" style="display:none;">
+    <span class="avatar-fallback" id="topbar-avatar-fb">👤</span>
+  </div>
+</div>
+
+<div class="wheel-layout">
+
+  <!-- 左侧选择面板 -->
+  <div class="select-panel" id="select-panel">
+    <h3>✅ 选择参与轮盘的菜品</h3>
+    <p class="hint">勾选2~20个菜品，点击轮盘中心开始旋转</p>
+    <div class="count-info" id="count-info">已选：0 个</div>
+    <div id="dish-checklist"></div>
+    <div class="select-actions">
+      <button class="btn btn-sm btn-outline" onclick="selectAll()">全选</button>
+      <button class="btn btn-sm btn-outline" onclick="clearAll()">清空</button>
+    </div>
+  </div>
+
+  <!-- 右侧轮盘区域 -->
+  <div class="wheel-area">
+    <div class="wheel-container" id="wheel-container">
+      <div class="wheel-pointer"></div>
+      <div class="wheel-spin-wrap" id="wheel-spin-wrap">
+        <canvas id="wheelCanvas"></canvas>
+      </div>
+      <button class="spin-btn" id="spin-btn" onclick="startSpin()">GO</button>
+    </div>
+    <p style="color:#bbb;font-size:13px;text-align:center;" id="wheel-hint">选择菜品后将自动生成轮盘</p>
+  </div>
+
+</div>
+
+<script>
+// ===== 状态 =====
+var menuData = [];
+var checked = {};     // {dishId: true}
+var isSpinning = false;
+var canvasSize = 0;
+var currentRotation = 0;
+
+// 多巴胺轮盘配色（循环使用）
+var wheelColors = [
+  '#FF6B6B', '#FFA94D', '#FFD43B', '#69DB7C', '#38D9A9',
+  '#74C0FC', '#CC5DE8', '#F783AC', '#FF6EB4', '#A9E34B',
+  '#FF8787', '#FCC419', '#20C997', '#339AF0', '#E599F7',
+  '#FF8787', '#FFC078', '#82C91E', '#4DABF7', '#BE4BDB'
+];
+
+// ===== 初始化 =====
+fetch('/api/user').then(function(r) { return r.json(); }).then(function(d) {
+  if (d.ok && d.avatar) {
+    document.getElementById('topbar-avatar').src = '/static/avatars/' + d.avatar;
+    document.getElementById('topbar-avatar').style.display = '';
+    document.getElementById('topbar-avatar-fb').style.display = 'none';
+  }
+});
+fetch('/api/menu').then(function(r) { return r.json(); }).then(function(data) {
+  menuData = data;
+  renderChecklist();
+  updateCount();
+});
+
+// ===== 渲染复选框列表 =====
+function renderChecklist() {
+  var cats = {};
+  menuData.forEach(function(d) {
+    if (!cats[d.category]) cats[d.category] = [];
+    cats[d.category].push(d);
+  });
+
+  var html = '';
+  Object.keys(cats).forEach(function(cat) {
+    html += '<div class="cat-group">';
+    html += '<div class="cat-group-title" onclick="toggleCat(this)"><span class="arrow open">▶</span>' + cat + '</div>';
+    html += '<div class="cat-dishes">';
+    cats[cat].forEach(function(d) {
+      html += '<label class="dish-check">';
+      html += '<input type="checkbox" onchange="onCheck(' + d.id + ', this.checked)" ' + (checked[d.id] ? 'checked' : '') + '>';
+      html += '<span class="cb"></span>';
+      html += (d.image ? '<img class="check-img" src="/static/images/' + d.image + '" onerror="this.style.display=\'none\'">' : '');
+      html += '<span>' + (d.emoji || '') + ' ' + d.name + ' ¥' + d.price + '</span>';
+      html += '</label>';
+    });
+    html += '</div></div>';
+  });
+  document.getElementById('dish-checklist').innerHTML = html;
+}
+
+// ===== 折叠分类 =====
+function toggleCat(el) {
+  var arrow = el.querySelector('.arrow');
+  arrow.classList.toggle('open');
+  var dishes = el.nextElementSibling;
+  dishes.style.display = dishes.style.display === 'none' ? 'flex' : 'none';
+}
+
+// ===== 选择处理 =====
+function onCheck(id, val) {
+  var sel = getSelected();
+  if (val && sel.length >= 20) {
+    toast('最多选择20个菜品哟~', 'error');
+    renderChecklist();
+    return;
+  }
+  if (val) { checked[id] = true; }
+  else { delete checked[id]; }
+  updateCount();
+  drawWheel();
+}
+
+function getSelected() {
+  return menuData.filter(function(d) { return checked[d.id]; });
+}
+
+function selectAll() {
+  if (menuData.length > 20) { toast('菜品超过20个，无法全选哟~最多选20个', 'error'); return; }
+  menuData.forEach(function(d) { checked[d.id] = true; });
+  renderChecklist();
+  updateCount();
+  drawWheel();
+}
+
+function clearAll() {
+  checked = {};
+  renderChecklist();
+  updateCount();
+  drawWheel();
+}
+
+function updateCount() {
+  var n = getSelected().length;
+  var el = document.getElementById('count-info');
+  el.textContent = '已选：' + n + ' 个（需2~20个）';
+  el.className = 'count-info' + (n < 2 ? ' warn' : '') + (n >= 2 && n <= 20 ? ' ok' : '');
+}
+
+// ===== 绘制轮盘 =====
+function getCanvasSize() {
+  var w = Math.min(window.innerWidth - 40, 480);
+  if (window.innerWidth > 768) w = Math.min(window.innerWidth - 420, 500);
+  return w;
+}
+
+function drawWheel() {
+  var dishes = getSelected();
+  var canvas = document.getElementById('wheelCanvas');
+  var wrap = document.getElementById('wheel-spin-wrap');
+  var container = document.getElementById('wheel-container');
+  var hint = document.getElementById('wheel-hint');
+
+  // 重置旋转
+  currentRotation = 0;
+  wrap.style.transition = 'none';
+  wrap.style.transform = 'rotate(0deg)';
+
+  if (dishes.length < 2) {
+    canvas.style.display = 'none';
+    document.getElementById('spin-btn').style.display = 'none';
+    hint.style.display = 'block';
+    hint.textContent = dishes.length === 0 ? '👆 请在左侧勾选菜品，至少选2个~' : '还需要再选 ' + (2 - dishes.length) + ' 个菜品哟~';
+    return;
+  }
+
+  canvas.style.display = 'block';
+  document.getElementById('spin-btn').style.display = 'flex';
+  hint.style.display = 'none';
+
+  canvasSize = getCanvasSize();
+  canvas.width = canvasSize;
+  canvas.height = canvasSize;
+
+  var ctx = canvas.getContext('2d');
+  var cx = canvasSize / 2;
+  var cy = canvasSize / 2;
+  var radius = canvasSize / 2 - 8;
+  var n = dishes.length;
+  var sectorAngle = (2 * Math.PI) / n;
+
+  ctx.clearRect(0, 0, canvasSize, canvasSize);
+
+  // 绘制扇区
+  for (var i = 0; i < n; i++) {
+    var start = i * sectorAngle - Math.PI / 2;
+    var end = start + sectorAngle;
+
+    // 扇区填充
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, radius, start, end);
+    ctx.closePath();
+    ctx.fillStyle = wheelColors[i % wheelColors.length];
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // 文字
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(start + sectorAngle / 2);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold ' + Math.min(16, Math.max(11, Math.floor(320 / n))) + 'px "Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.shadowColor = 'rgba(0,0,0,0.2)';
+    ctx.shadowBlur = 2;
+    var textRadius = radius * 0.62;
+    ctx.fillText(dishes[i].name, textRadius, 5);
+    ctx.restore();
+  }
+
+  // 中心圆
+  var grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius * 0.18);
+  grad.addColorStop(0, '#fff');
+  grad.addColorStop(1, '#f0f0f0');
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius * 0.14, 0, 2 * Math.PI);
+  ctx.fillStyle = grad;
+  ctx.fill();
+  ctx.strokeStyle = '#ddd';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // 外层装饰环
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 5;
+  ctx.stroke();
+
+  // 小圆点装饰
+  for (var j = 0; j < n; j++) {
+    var a = j * sectorAngle - Math.PI / 2 + sectorAngle / 2;
+    var dotX = cx + radius * 0.88 * Math.cos(a);
+    var dotY = cy + radius * 0.88 * Math.sin(a);
+    ctx.beginPath();
+    ctx.arc(dotX, dotY, 5, 0, 2 * Math.PI);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+  }
+}
+
+// ===== 旋转轮盘 =====
+function startSpin() {
+  if (isSpinning) return;
+  var dishes = getSelected();
+  if (dishes.length < 2) { toast('至少选择2个菜品才能开始哟~', 'error'); return; }
+  if (dishes.length > 20) { toast('最多选择20个菜品哟~', 'error'); return; }
+
+  isSpinning = true;
+  document.getElementById('spin-btn').classList.add('spinning');
+  document.getElementById('spin-btn').textContent = '...';
+
+  var n = dishes.length;
+  var sectorDeg = 360 / n;
+
+  // 先随机选出赢家
+  var winnerIdx = Math.floor(Math.random() * n);
+  // 扇区 i 绘制在 i*sectorDeg 到 (i+1)*sectorDeg（顺时针从12点起）
+  // CSS rotate(Xdeg) 顺时针旋转后，扇区中心移到 (sectorCenter + X) % 360
+  // 要让它回到指针（12点=0°），需 X = (360 - sectorCenter) % 360
+  var sectorCenter = winnerIdx * sectorDeg + sectorDeg / 2;
+  var targetMod = (360 - sectorCenter) % 360;
+  var prevMod = currentRotation % 360;
+  var netDeg = (targetMod - prevMod + 360) % 360;
+  var extraSpins = 3 + Math.floor(Math.random() * 4);
+  currentRotation += netDeg + extraSpins * 360;
+
+  var wrap = document.getElementById('wheel-spin-wrap');
+  wrap.style.transition = 'transform 3s cubic-bezier(0.17, 0.67, 0.12, 0.99)';
+  wrap.style.transform = 'rotate(' + currentRotation + 'deg)';
+
+  var winner = dishes[winnerIdx];
+
+  setTimeout(function() {
+    isSpinning = false;
+    document.getElementById('spin-btn').classList.remove('spinning');
+    document.getElementById('spin-btn').textContent = 'GO';
+    showResult(winner);
+  }, 3100);
+}
+
+// ===== 结果弹窗 =====
+function showResult(dish) {
+  var overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML =
+    '<div class="modal-box">' +
+    (dish.image ? '<div class="modal-img-wrap"><img class="modal-dish-img" src="/static/images/' + dish.image + '" onerror="this.style.display=\'none\'"></div>' : '<div class="modal-emoji">' + (dish.emoji || '🎯') + '</div>') +
+    '<div class="modal-title">命运选择了...</div>' +
+    '<div class="modal-text" style="font-size:24px;font-weight:900;color:var(--coral);">' + dish.name + '</div>' +
+    '<div class="modal-text">¥' + dish.price + ' | ' + dish.category + '</div>' +
+    '<p style="font-size:14px;color:#aaa;margin-bottom:12px;">就吃这个吧！🎉</p>' +
+    '<button class="btn btn-primary" id="modal-ok">好的~</button>' +
+    '<button class="btn btn-outline" id="modal-retry" style="margin-left:8px;">再转一次</button>' +
+    '</div>';
+  document.body.appendChild(overlay);
+
+  overlay.querySelector('#modal-ok').addEventListener('click', function() { overlay.remove(); });
+  overlay.querySelector('#modal-retry').addEventListener('click', function() {
+    overlay.remove();
+    setTimeout(startSpin, 300);
+  });
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+}
+
+// ===== 工具函数 =====
+function toast(msg, type) {
+  var t = document.createElement('div');
+  t.className = 'toast toast-' + (type || 'info');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(function() { t.remove(); }, 2600);
+}
+
+// ===== 响应式重绘 =====
+var resizeTimer;
+window.addEventListener('resize', function() {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(function() {
+    if (getSelected().length >= 2) drawWheel();
+  }, 300);
+});
+</script>
+</body>
+</html>

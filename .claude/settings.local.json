@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Recurse -File)",
+      "Bash(Select-Object FullName)",
+      "Bash(pip install *)",
+      "Bash(python app.py)",
+      "Bash(Start-Sleep -Seconds 2)",
+      "Bash(curl -s http://localhost:5000/api/menu)",
+      "Bash(curl *)",
+      "Bash(Remove-Item *)",
+      "Bash(New-Item *)",
+      "PowerShell(New-Item *)",
+      "Bash(python -c \"from main import app; print\\('Routes registered:'\\); [print\\(' ', r.rule, '->', r.endpoint\\) for r in app.url_map.iter_rules\\(\\) if not r.rule.startswith\\('/static'\\)]\")",
+      "Bash(python -c \"import main; print\\('OK'\\)\")",
+      "PowerShell(python -c \"import py_compile; py_compile.compile\\('c:/Users/15913/Desktop/jiaohu/config.py', doraise=True\\); py_compile.compile\\('c:/Users/15913/Desktop/jiaohu/utils.py', doraise=True\\); py_compile.compile\\('c:/Users/15913/Desktop/jiaohu/routes/pages.py', doraise=True\\); py_compile.compile\\('c:/Users/15913/Desktop/jiaohu/routes/api.py', doraise=True\\); py_compile.compile\\('c:/Users/15913/Desktop/jiaohu/main.py', doraise=True\\); print\\('All files compile OK'\\)\")",
+      "Bash(python -c \"from main import app; print\\('OK - App loaded successfully'\\)\")",
+      "Bash(python -c \"from main import app; print\\('OK'\\)\")",
+      "PowerShell(where python; python --version)",
+      "PowerShell(Get-ChildItem -Recurse -Depth 3 C:\\\\Users\\\\15913\\\\Desktop\\\\jiaohu | Where-Object { -not $_.PSIsContainer } | ForEach-Object { $_.FullName.Replace\\(\"C:\\\\Users\\\\15913\\\\Desktop\\\\jiaohu\\\\\", \"\"\\) })",
+      "Bash(python *)",
+      "Bash(Get-Command python *)",
+      "Bash(Select-Object -ExpandProperty Source)",
+      "Bash(conda info *)",
+      "PowerShell(python --version 2>&1; python -c \"import py_compile; py_compile.compile\\('C:\\\\Users\\\\15913\\\\Desktop\\\\jiaohu\\\\database.py', doraise=True\\); print\\('OK'\\)\" 2>&1)",
+      "Bash(/usr/bin/python3 --version)",
+      "Read(//c/Users/15913/**)",
+      "Read(//c/Users/15913/AppData/Local/**)",
+      "Read(//c/ProgramData/**)",
+      "Bash(git *)",
+      "Bash(pip list *)",
+      "Bash(Select-String -Pattern \"Flask|mysql|werkzeug\")",
+      "Bash(powershell.exe *)",
+      "Bash(E:\\\\Program Files\\\\Python\\\\python.exe *)"
+    ]
+  }
+}

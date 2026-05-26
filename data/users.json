@@ -1,0 +1,17 @@
+[
+  {
+    "username": "skite",
+    "password_hash": "scrypt:32768:8:1$FinqQmUAKe9L88nP$c87b5741c3fb3a1eb2753fe5ef2559c20433a3fef9c6de721e4697692ccbe859d652b42506c32c79e9a929eb0b72632b23d4fa2b0416da8db6b585a9f88b51dd",
+    "role": "admin"
+  },
+  {
+    "username": "normaluser",
+    "password_hash": "scrypt:32768:8:1$FinqQmUAKe9L88nP$c87b5741c3fb3a1eb2753fe5ef2559c20433a3fef9c6de721e4697692ccbe859d652b42506c32c79e9a929eb0b72632b23d4fa2b0416da8db6b585a9f88b51dd",
+    "role": "user"
+  },
+  {
+    "username": "baby",
+    "password_hash": "scrypt:32768:8:1$iaRHe5jPxjMjGc8Z$097bce856056f08796d99309e7b762299e38d6270a24db1db41e3e2e45aeaecda1cb856ae6b47cb2ae98aad8ddbdd172226643aa2cd8199933fc966ca50f103b",
+    "role": "user"
+  }
+]

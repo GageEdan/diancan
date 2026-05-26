@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>美食点餐 - 登录</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<style>
+  .login-bg {
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #FFE0D0 0%, #FFD4E8 25%, #FFE8D0 50%, #D4E8FF 75%, #E8D4FF 100%);
+    background-size: 300% 300%;
+    animation: bgShift 12s ease infinite;
+  }
+  @keyframes bgShift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+
+  .login-card {
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(15px);
+    border-radius: 28px;
+    padding: 36px 30px 30px;
+    width: 400px; max-width: 92vw;
+    box-shadow: 0 20px 50px rgba(255,107,107,0.18);
+  }
+
+  .login-logo {
+    text-align: center; margin-bottom: 24px;
+  }
+  .login-logo .icon { font-size: 52px; display: block; margin-bottom: 4px; }
+  .login-logo h1 {
+    font-size: 26px; font-weight: 900;
+    background: linear-gradient(135deg, var(--coral), var(--purple));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .tabs {
+    display: flex; gap: 0; margin-bottom: 24px;
+    background: #FFF0F0; border-radius: 50px; padding: 4px;
+  }
+  .tab-btn {
+    flex: 1; padding: 12px; border: none; border-radius: 50px;
+    font-size: 15px; font-weight: 700; cursor: pointer;
+    background: transparent; color: #999; transition: all 0.3s;
+    font-family: inherit;
+  }
+  .tab-btn.active {
+    background: #fff; color: var(--coral);
+    box-shadow: 0 4px 12px rgba(255,107,107,0.2);
+  }
+
+  .form-panel { display: none; }
+  .form-panel.active { display: block; }
+
+  .bouncy-icons {
+    text-align: center; margin-top: 18px; font-size: 28px;
+    display: flex; justify-content: center; gap: 8px;
+  }
+  .bouncy-icons span {
+    animation: bounce 1.2s ease infinite;
+  }
+  .bouncy-icons span:nth-child(2) { animation-delay: 0.15s; }
+  .bouncy-icons span:nth-child(3) { animation-delay: 0.3s; }
+  .bouncy-icons span:nth-child(4) { animation-delay: 0.45s; }
+  .bouncy-icons span:nth-child(5) { animation-delay: 0.6s; }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+  }
+</style>
+</head>
+<body>
+<div class="login-bg">
+  <div class="login-card">
+
+    <div class="login-logo">
+      <span class="icon">🍽️</span>
+      <h1>多巴胺美食点餐</h1>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('login')">登 录</button>
+      <button class="tab-btn" onclick="switchTab('register')">注 册</button>
+    </div>
+
+    <!-- 登录表单 -->
+    <div id="panel-login" class="form-panel active">
+      <div class="input-group">
+        <label>👤 账号</label>
+        <input class="input-field" id="login-user" type="text" placeholder="请输入账号" autocomplete="username">
+      </div>
+      <div class="input-group">
+        <label>🔒 密码</label>
+        <input class="input-field" id="login-pass" type="password" placeholder="请输入密码" autocomplete="current-password">
+      </div>
+      <button class="btn btn-primary btn-block btn-lg" onclick="doLogin()" style="margin-top:8px;">
+        🚀 开吃啦
+      </button>
+    </div>
+
+    <!-- 注册表单 -->
+    <div id="panel-register" class="form-panel">
+      <div class="input-group">
+        <label>👤 设置账号</label>
+        <input class="input-field" id="reg-user" type="text" placeholder="至少2个字符">
+      </div>
+      <div class="input-group">
+        <label>🔒 设置密码</label>
+        <input class="input-field" id="reg-pass" type="password" placeholder="至少4位密码">
+      </div>
+      <div class="input-group">
+        <label>🔒 确认密码</label>
+        <input class="input-field" id="reg-pass2" type="password" placeholder="再次输入密码">
+      </div>
+      <button class="btn btn-purple btn-block btn-lg" onclick="doRegister()" style="margin-top:8px;">
+        🎉 注册加入
+      </button>
+    </div>
+
+    <div class="bouncy-icons">
+      <span>🍕</span><span>🍜</span><span>🍰</span><span>🧋</span><span>🍦</span>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// Tab 切换
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(function(b, i) {
+    b.classList.toggle('active', (tab === 'login' && i === 0) || (tab === 'register' && i === 1));
+  });
+  document.getElementById('panel-login').classList.toggle('active', tab === 'login');
+  document.getElementById('panel-register').classList.toggle('active', tab === 'register');
+}
+
+// Enter 键提交
+document.addEventListener('keydown', function(e) {
+  if (e.key !== 'Enter') return;
+  if (document.getElementById('panel-login').classList.contains('active')) { doLogin(); }
+  else { doRegister(); }
+});
+
+// Toast
+function toast(msg, type) {
+  var t = document.createElement('div');
+  t.className = 'toast toast-' + (type || 'info');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(function() { t.remove(); }, 2600);
+}
+
+// 登录
+function doLogin() {
+  var u = document.getElementById('login-user').value.trim();
+  var p = document.getElementById('login-pass').value;
+  if (!u || !p) { toast('请填写账号和密码哟~', 'error'); return; }
+
+  fetch('/api/login', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: u, password: p })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.ok) { toast(d.msg, 'success'); setTimeout(function() { location.href = '/menu'; }, 600); }
+    else { toast(d.msg, 'error'); }
+  });
+}
+
+// 注册
+function doRegister() {
+  var u = document.getElementById('reg-user').value.trim();
+  var p = document.getElementById('reg-pass').value;
+  var p2 = document.getElementById('reg-pass2').value;
+  if (!u || !p) { toast('请填写完整信息哟~', 'error'); return; }
+  if (p !== p2) { toast('两次密码不一致哟~', 'error'); return; }
+
+  fetch('/api/register', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: u, password: p })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.ok) { toast(d.msg, 'success'); setTimeout(function() { location.href = '/menu'; }, 600); }
+    else { toast(d.msg, 'error'); }
+  });
+}
+</script>
+</body>
+</html>
