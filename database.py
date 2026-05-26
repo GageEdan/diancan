@@ -564,6 +564,24 @@ def get_all_orders():
         return orders
 
 
+# ---------- 订单删除 ----------
+
+def delete_order(order_id):
+    """硬删除订单及其关联的 order_items"""
+    if _use_json_fallback:
+        orders = _json_read('orders.json')
+        orders = [o for o in orders if o.get('id') != order_id]
+        _json_write('orders.json', orders)
+        return
+
+    with get_db() as (conn, cur):
+        if conn is None:
+            raise RuntimeError('数据库连接不可用')
+        cur.execute("DELETE FROM order_items WHERE order_id = %s", (order_id,))
+        cur.execute("DELETE FROM orders WHERE id = %s", (order_id,))
+        conn.commit()
+
+
 # ---------- 配置操作 ----------
 
 def get_config(key):
@@ -636,11 +654,10 @@ def update_menu_order(item_order_list):
 
 # ---------- 每日流水 ----------
 
-def get_daily_revenue(days=365):
+def get_daily_revenue(days=365, year=None):
     if _use_json_fallback:
         orders = _json_read('orders.json')
         daily = {}
-        from datetime import datetime, timedelta
         for o in orders:
             ts = o.get('created_at', '')
             if ts:
@@ -653,6 +670,8 @@ def get_daily_revenue(days=365):
                     continue
             else:
                 continue
+            if year is not None and not day.startswith(str(year)):
+                continue
             amt = float(o.get('total_amount', 0) or 0)
             daily[day] = daily.get(day, 0) + amt
         return daily
@@ -660,13 +679,22 @@ def get_daily_revenue(days=365):
     with get_db(dictionary=True) as (conn, cur):
         if conn is None:
             return {}
-        cur.execute("""
-            SELECT DATE(created_at) as day, SUM(total_amount) as total
-            FROM orders
-            WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL %s DAY)
-            GROUP BY DATE(created_at)
-            ORDER BY day
-        """, (days,))
+        if year is not None:
+            cur.execute("""
+                SELECT DATE(created_at) as day, SUM(total_amount) as total
+                FROM orders
+                WHERE YEAR(created_at) = %s
+                GROUP BY DATE(created_at)
+                ORDER BY day
+            """, (year,))
+        else:
+            cur.execute("""
+                SELECT DATE(created_at) as day, SUM(total_amount) as total
+                FROM orders
+                WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL %s DAY)
+                GROUP BY DATE(created_at)
+                ORDER BY day
+            """, (days,))
         result = {}
         for row in cur.fetchall():
             day_str = row['day'].strftime('%Y-%m-%d') if hasattr(row['day'], 'strftime') else str(row['day'])

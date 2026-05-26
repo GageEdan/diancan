@@ -9,7 +9,7 @@ from database import (
     get_all_menu, add_menu_item, update_menu_item, delete_menu_item,
     get_user_by_username, create_user, update_user_password, update_user_avatar,
     get_all_config, get_config, set_config, create_order, get_all_orders,
-    update_menu_order, get_daily_revenue
+    update_menu_order, get_daily_revenue, delete_order
 )
 from utils import hash_password, verify_password, send_order_email, admin_required
 
@@ -287,7 +287,8 @@ def api_revenue():
     if 'username' not in session:
         return jsonify({'ok': False, 'msg': '请先登录'}), 401
     days = request.args.get('days', 365, type=int)
-    daily = get_daily_revenue(days)
+    year = request.args.get('year', None, type=int)
+    daily = get_daily_revenue(days=days, year=year)
     return jsonify({'ok': True, 'daily': daily})
 
 
@@ -298,3 +299,10 @@ def api_orders():
     if 'username' not in session:
         return jsonify({'ok': False, 'msg': '请先登录'}), 401
     return jsonify({'ok': True, 'orders': get_all_orders()})
+
+
+@api_bp.route('/api/orders/<int:order_id>', methods=['DELETE'])
+@admin_required
+def api_order_delete(order_id):
+    delete_order(order_id)
+    return jsonify({'ok': True, 'msg': '订单已删除'})
