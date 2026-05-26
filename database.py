@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS menu_items (
     emoji VARCHAR(10) DEFAULT '🍽️',
     image VARCHAR(255) DEFAULT '',
     is_active TINYINT(1) NOT NULL DEFAULT 1,
+    sort_order INT NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
@@ -113,6 +114,12 @@ def init_db():
 
                 try:
                     cur.execute("ALTER TABLE menu_items ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1")
+                    conn.commit()
+                except Exception:
+                    pass  # 列已存在则跳过
+
+                try:
+                    cur.execute("ALTER TABLE menu_items ADD COLUMN sort_order INT NOT NULL DEFAULT 0")
                     conn.commit()
                 except Exception:
                     pass  # 列已存在则跳过
@@ -357,6 +364,7 @@ def get_all_menu():
         items = _json_read('menu.json')
         for item in items:
             item['price'] = float(item['price'])
+        items.sort(key=lambda x: (x.get('position', x.get('id', 0)), x.get('id', 0)))
         return items
 
     with get_db(dictionary=True) as (conn, cur):
@@ -367,7 +375,7 @@ def get_all_menu():
             FROM menu_items m
             JOIN categories c ON m.category_id = c.id
             WHERE m.is_active = 1
-            ORDER BY m.id
+            ORDER BY m.sort_order ASC, m.id ASC
         """)
         rows = cur.fetchall()
         for row in rows:
@@ -395,9 +403,11 @@ def add_menu_item(name, price, category_name, emoji='🍽️', image=''):
     if _use_json_fallback:
         items = _json_read('menu.json')
         new_id = max([i.get('id', 0) for i in items], default=0) + 1
+        max_pos = max([i.get('position', 0) for i in items], default=0)
         items.append({
             'id': new_id, 'name': name, 'price': float(price),
             'category': category_name, 'emoji': emoji, 'image': image,
+            'position': max_pos + 1,
         })
         _json_write('menu.json', items)
         return new_id
@@ -406,9 +416,11 @@ def add_menu_item(name, price, category_name, emoji='🍽️', image=''):
     with get_db() as (conn, cur):
         if conn is None:
             raise RuntimeError('数据库连接不可用')
+        cur.execute("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM menu_items")
+        next_order = cur.fetchone()[0]
         cur.execute(
-            "INSERT INTO menu_items (name, price, category_id, emoji, image) VALUES (%s, %s, %s, %s, %s)",
-            (name, price, cat_id, emoji, image)
+            "INSERT INTO menu_items (name, price, category_id, emoji, image, sort_order) VALUES (%s, %s, %s, %s, %s, %s)",
+            (name, price, cat_id, emoji, image, next_order)
         )
         new_id = cur.lastrowid
         conn.commit()
@@ -472,6 +484,7 @@ def delete_menu_item(item_id):
 
 def create_order(user_id, total_amount, items, username=None):
     if _use_json_fallback:
+        from datetime import datetime
         orders = _json_read('orders.json')
         new_id = max([o.get('id', 0) for o in orders], default=0) + 1
         orders.append({
@@ -479,6 +492,7 @@ def create_order(user_id, total_amount, items, username=None):
             'username': username or '未知用户',
             'total_amount': float(total_amount) if total_amount else 0.0,
             'status': 'pending', 'items': items,
+            'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         })
         _json_write('orders.json', orders)
         return new_id
@@ -593,3 +607,68 @@ def set_config(key, value):
             (key, str(value))
         )
         conn.commit()
+
+
+# ---------- 菜品排序 ----------
+
+def update_menu_order(item_order_list):
+    """item_order_list: [{'id': 1, 'position': 0}, ...]"""
+    if _use_json_fallback:
+        items = _json_read('menu.json')
+        for io in item_order_list:
+            for item in items:
+                if item['id'] == io['id']:
+                    item['position'] = io['position']
+                    break
+        _json_write('menu.json', items)
+        return
+
+    with get_db() as (conn, cur):
+        if conn is None:
+            raise RuntimeError('数据库连接不可用')
+        for io in item_order_list:
+            cur.execute(
+                "UPDATE menu_items SET sort_order = %s WHERE id = %s",
+                (io['position'], io['id'])
+            )
+        conn.commit()
+
+
+# ---------- 每日流水 ----------
+
+def get_daily_revenue(days=365):
+    if _use_json_fallback:
+        orders = _json_read('orders.json')
+        daily = {}
+        from datetime import datetime, timedelta
+        for o in orders:
+            ts = o.get('created_at', '')
+            if ts:
+                try:
+                    if 'T' in ts:
+                        day = ts[:10]
+                    else:
+                        day = ts[:10]
+                except Exception:
+                    continue
+            else:
+                continue
+            amt = float(o.get('total_amount', 0) or 0)
+            daily[day] = daily.get(day, 0) + amt
+        return daily
+
+    with get_db(dictionary=True) as (conn, cur):
+        if conn is None:
+            return {}
+        cur.execute("""
+            SELECT DATE(created_at) as day, SUM(total_amount) as total
+            FROM orders
+            WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL %s DAY)
+            GROUP BY DATE(created_at)
+            ORDER BY day
+        """, (days,))
+        result = {}
+        for row in cur.fetchall():
+            day_str = row['day'].strftime('%Y-%m-%d') if hasattr(row['day'], 'strftime') else str(row['day'])
+            result[day_str] = float(row['total'] or 0)
+        return result

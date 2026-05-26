@@ -8,7 +8,8 @@ from config import BASE_DIR
 from database import (
     get_all_menu, add_menu_item, update_menu_item, delete_menu_item,
     get_user_by_username, create_user, update_user_password, update_user_avatar,
-    get_all_config, get_config, set_config, create_order, get_all_orders
+    get_all_config, get_config, set_config, create_order, get_all_orders,
+    update_menu_order, get_daily_revenue
 )
 from utils import hash_password, verify_password, send_order_email, admin_required
 
@@ -263,6 +264,31 @@ def api_checkout():
         'msg': '下单成功！订单已保存' + (' 已通知商家~' if email_sent else ''),
         'email_sent': email_sent
     })
+
+
+# ---------- 菜品排序 ----------
+
+@api_bp.route('/api/menu/reorder', methods=['POST'])
+def api_menu_reorder():
+    if 'username' not in session:
+        return jsonify({'ok': False, 'msg': '请先登录'}), 401
+    d = request.get_json()
+    items = d.get('items', [])
+    if not items:
+        return jsonify({'ok': False, 'msg': '排序数据为空'}), 400
+    update_menu_order(items)
+    return jsonify({'ok': True, 'msg': '排序已保存'})
+
+
+# ---------- 每日流水 ----------
+
+@api_bp.route('/api/revenue')
+def api_revenue():
+    if 'username' not in session:
+        return jsonify({'ok': False, 'msg': '请先登录'}), 401
+    days = request.args.get('days', 365, type=int)
+    daily = get_daily_revenue(days)
+    return jsonify({'ok': True, 'daily': daily})
 
 
 # ---------- 订单记录 ----------

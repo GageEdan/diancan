@@ -94,6 +94,53 @@
     .content-area { max-width: 100%; }
   }
 
+  /* ===== 活动日历（GitHub 风格） ===== */
+  .activity-calendar {
+    padding: 16px 16px 20px;
+    border-top: 1px solid #F5F0F0;
+    flex-shrink: 0;
+  }
+  .activity-calendar .cal-title {
+    font-size: 13px; font-weight: 700; color: #999;
+    margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+  }
+  .cal-grid {
+    display: flex; gap: 3px; overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .cal-week { display: flex; flex-direction: column; gap: 3px; }
+  .cal-day {
+    width: 13px; height: 13px; border-radius: 3px;
+    background: #F0F0F0; position: relative;
+    flex-shrink: 0;
+    cursor: default;
+    transition: transform 0.15s;
+  }
+  .cal-day:hover { transform: scale(1.4); z-index: 2; }
+  .cal-day[data-level="1"] { background: #FFE0D0; }
+  .cal-day[data-level="2"] { background: #FFB8A0; }
+  .cal-day[data-level="3"] { background: #FF8C6E; }
+  .cal-day[data-level="4"] { background: #FF6B6B; }
+  .cal-day[data-level="5"] { background: #E04545; }
+  .cal-legend {
+    display: flex; align-items: center; gap: 4px;
+    margin-top: 8px; font-size: 11px; color: #bbb;
+  }
+  .cal-legend .cal-day { width: 11px; height: 11px; }
+  .cal-month-labels {
+    display: flex; justify-content: space-between;
+    font-size: 10px; color: #ccc; margin-bottom: 4px;
+    min-width: 700px;
+  }
+  .cal-tooltip {
+    position: fixed; z-index: 9999;
+    background: #333; color: #fff; font-size: 12px;
+    padding: 4px 10px; border-radius: 6px;
+    pointer-events: none; white-space: nowrap;
+    opacity: 0; transition: opacity 0.15s;
+  }
+  .cal-tooltip.show { opacity: 1; }
+
   /* ===== 分类标签 ===== */
   .cat-tabs {
     display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 22px;
@@ -119,12 +166,34 @@
     box-shadow: var(--shadow); transition: all 0.25s;
     display: flex; flex-direction: column; align-items: center; text-align: center;
     position: relative; overflow: hidden;
+    cursor: grab; user-select: none;
   }
+  .dish-card:active { cursor: grabbing; }
   .dish-card:hover { transform: translateY(-4px); box-shadow: 0 8px 25px rgba(255,107,107,0.18); }
+  .dish-card.dragging { opacity: 0.5; transform: scale(0.95); }
+  .dish-card.drag-over { border: 2px dashed var(--coral); transform: translateY(-4px); box-shadow: 0 8px 25px rgba(255,107,107,0.25); }
+  .dish-card .drag-handle {
+    position: absolute; top: 6px; left: 10px;
+    font-size: 12px; color: #ccc; cursor: grab; opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .dish-card:hover .drag-handle { opacity: 0.7; }
   .dish-card .dish-emoji { font-size: 48px; margin-bottom: 8px; }
   .dish-card .dish-name { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
-  .dish-card .dish-price { font-size: 18px; font-weight: 900; color: var(--coral); margin-bottom: 12px; }
+  .dish-card .dish-price { font-size: 18px; font-weight: 900; color: var(--coral); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
   .dish-card .dish-price::before { content: '¥'; font-size: 13px; }
+
+  .price-adj-btn {
+    width: 22px; height: 22px; border-radius: 50%; border: none;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: all 0.15s; line-height: 1; color: #fff;
+    flex-shrink: 0;
+  }
+  .price-minus-btn { background: #FFCCD5; color: var(--coral); }
+  .price-plus-btn { background: var(--coral); }
+  .price-adj-btn:hover { transform: scale(1.2); }
+  .price-adj-btn:active { transform: scale(0.85); }
 
   .qty-ctrl {
     display: flex; align-items: center; gap: 10px;
@@ -325,6 +394,21 @@
     <div class="order-list" id="order-list">
       <div class="order-list-empty"><span class="icon">📭</span>加载中...</div>
     </div>
+    <div class="activity-calendar" id="activity-calendar">
+      <div class="cal-title">📊 平台流水热力</div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div class="cal-legend">
+        <span>少</span>
+        <span class="cal-day" data-level="0"></span>
+        <span class="cal-day" data-level="1"></span>
+        <span class="cal-day" data-level="2"></span>
+        <span class="cal-day" data-level="3"></span>
+        <span class="cal-day" data-level="4"></span>
+        <span class="cal-day" data-level="5"></span>
+        <span>多</span>
+      </div>
+    </div>
+    <div class="cal-tooltip" id="cal-tooltip"></div>
   </div>
 
 </div>
@@ -485,6 +569,96 @@ function fetchOrders() {
   });
 }
 
+// ===== 活动日历 =====
+function fetchRevenue() {
+  fetch('/api/revenue?days=371').then(function(r) { return r.json(); }).then(function(d) {
+    if (d.ok) {
+      renderCalendar(d.daily);
+    }
+  });
+}
+
+function renderCalendar(daily) {
+  var grid = document.getElementById('cal-grid');
+  var now = new Date();
+  var endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  var startDate = new Date(endDate);
+  startDate.setDate(startDate.getDate() - 370); // ~53 weeks
+
+  // 找到所有值的范围用于分级
+  var values = Object.values(daily);
+  var maxVal = values.length > 0 ? Math.max.apply(null, values) : 1;
+  if (maxVal <= 0) maxVal = 1;
+
+  // 生成日期到金额的映射
+  var dateMap = {};
+  Object.keys(daily).forEach(function(k) {
+    dateMap[k] = daily[k];
+  });
+
+  // 左补齐到周日
+  while (startDate.getDay() !== 0) {
+    startDate.setDate(startDate.getDate() - 1);
+  }
+
+  // 构建按周分组的格子
+  var weeks = [];
+  var cur = new Date(startDate);
+  var weekIdx = 0;
+  while (cur <= endDate) {
+    if (!weeks[weekIdx]) weeks[weekIdx] = [];
+    var dayStr = formatDate(cur);
+    var val = dateMap[dayStr] || 0;
+    var level = val <= 0 ? 0 : Math.min(5, Math.ceil((val / maxVal) * 5));
+    weeks[weekIdx].push({ date: dayStr, value: val, level: level });
+    cur.setDate(cur.getDate() + 1);
+    if (cur.getDay() === 0) weekIdx++;
+  }
+
+  // 生成月份标签
+  var monthLabels = [];
+  weeks.forEach(function(w, wi) {
+    if (w.length > 0) {
+      var d = new Date(w[0].date + 'T00:00:00');
+      if (d.getDate() <= 7 || wi === 0) {
+        monthLabels.push({ idx: wi, label: (d.getMonth() + 1) + '月' });
+      }
+    }
+  });
+
+  var html = '';
+  weeks.forEach(function(w) {
+    html += '<div class="cal-week">';
+    w.forEach(function(day) {
+      html += '<div class="cal-day" data-level="' + day.level + '" data-date="' + day.date + '" data-value="' + day.value.toFixed(2) + '"';
+      html += ' onmouseenter="showCalTooltip(event, this)" onmouseleave="hideCalTooltip()"></div>';
+    });
+    html += '</div>';
+  });
+  grid.innerHTML = html;
+}
+
+function formatDate(d) {
+  var y = d.getFullYear();
+  var m = String(d.getMonth() + 1).padStart(2, '0');
+  var day = String(d.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + day;
+}
+
+function showCalTooltip(e, el) {
+  var tip = document.getElementById('cal-tooltip');
+  var date = el.getAttribute('data-date');
+  var value = el.getAttribute('data-value');
+  tip.textContent = date + '  ¥' + value;
+  tip.style.left = (e.clientX + 12) + 'px';
+  tip.style.top = (e.clientY - 30) + 'px';
+  tip.classList.add('show');
+}
+
+function hideCalTooltip() {
+  document.getElementById('cal-tooltip').classList.remove('show');
+}
+
 // ===== 初始化 =====
 var currentUser = {};
 fetch('/api/user').then(function(r) { return r.json(); }).then(function(d) {
@@ -501,6 +675,7 @@ fetch('/api/user').then(function(r) { return r.json(); }).then(function(d) {
 loadCart();
 fetchMenu();
 fetchOrders();
+fetchRevenue();
 
 // ===== 加载菜单 =====
 function fetchMenu() {
@@ -568,9 +743,12 @@ function renderDishes() {
   }
 
   var html = '';
-  list.forEach(function(d) {
+  list.forEach(function(d, idx) {
     var qty = cart[d.id] || 0;
-    html += '<div class="dish-card' + (adminMode ? ' admin-card' : '') + '">';
+    html += '<div class="dish-card' + (adminMode ? ' admin-card' : '') + '" draggable="true" data-dish-id="' + d.id + '" data-position="' + idx + '"';
+    html += ' ondragstart="handleDragStart(event, this)" ondragend="handleDragEnd(event, this)" ondragover="handleDragOver(event, this)" ondragleave="handleDragLeave(event, this)" ondrop="handleDrop(event, this)"';
+    html += '>';
+    html += '<span class="drag-handle">⠿</span>';
     if (adminMode) {
       html += '<div class="admin-actions">';
       html += '<button class="admin-btn admin-edit-btn" onclick="event.stopPropagation();openDishModal(' + d.id + ')" title="编辑">✏️</button>';
@@ -583,7 +761,15 @@ function renderDishes() {
       html += '<div class="dish-emoji">' + (d.emoji || '🍽️') + '</div>';
     }
     html += '<div class="dish-name">' + d.name + '</div>';
-    html += '<div class="dish-price">' + d.price + '</div>';
+    html += '<div class="dish-price">';
+    if (adminMode) {
+      html += '<button class="price-adj-btn price-minus-btn" onclick="event.stopPropagation();adjustPrice(' + d.id + ', -0.5)">−</button>';
+    }
+    html += '<span>' + d.price + '</span>';
+    if (adminMode) {
+      html += '<button class="price-adj-btn price-plus-btn" onclick="event.stopPropagation();adjustPrice(' + d.id + ', 0.5)">+</button>';
+    }
+    html += '</div>';
     html += '<div class="qty-ctrl">';
     html += '<button class="qty-btn qty-minus" onclick="changeQty(' + d.id + ', -1)">−</button>';
     html += '<span class="qty-num' + (qty === 0 ? ' zero' : '') + '">' + qty + '</span>';
@@ -618,6 +804,125 @@ function changeQty(dishId, delta) {
   }
   saveCart();
   renderDishes();
+}
+
+// ===== 拖拽排序 =====
+var draggedEl = null;
+var dragSourceIdx = -1;
+
+function handleDragStart(e, el) {
+  draggedEl = el;
+  dragSourceIdx = getFilteredIndex(el);
+  el.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', '');
+}
+
+function handleDragEnd(e, el) {
+  el.classList.remove('dragging');
+  var allCards = document.querySelectorAll('#dish-grid .dish-card');
+  allCards.forEach(function(c) { c.classList.remove('drag-over'); });
+  draggedEl = null;
+  dragSourceIdx = -1;
+  saveDishOrder();
+}
+
+function handleDragOver(e, el) {
+  e.preventDefault();
+  if (!draggedEl || el === draggedEl) return;
+  e.dataTransfer.dropEffect = 'move';
+  el.classList.add('drag-over');
+}
+
+function handleDragLeave(e, el) {
+  el.classList.remove('drag-over');
+}
+
+function handleDrop(e, el) {
+  e.preventDefault();
+  e.stopPropagation();
+  el.classList.remove('drag-over');
+  if (!draggedEl || el === draggedEl) return;
+
+  var targetIdx = getFilteredIndex(el);
+  if (targetIdx < 0 || dragSourceIdx < 0) return;
+
+  var grid = document.getElementById('dish-grid');
+  var cards = Array.from(grid.children);
+  var targetCard = cards[targetIdx];
+  var sourceCard = cards[dragSourceIdx];
+
+  if (targetIdx > dragSourceIdx) {
+    grid.insertBefore(sourceCard, targetCard.nextSibling);
+  } else {
+    grid.insertBefore(sourceCard, targetCard);
+  }
+
+  // 立即同步 menuData 顺序
+  var draggedId = parseInt(sourceCard.getAttribute('data-dish-id'));
+  var targetId = parseInt(targetCard.getAttribute('data-dish-id'));
+  var draggedItem = null;
+  var draggedIdx = -1;
+  menuData.forEach(function(item, i) {
+    if (item.id === draggedId) { draggedItem = item; draggedIdx = i; }
+  });
+  if (draggedItem && draggedIdx >= 0) {
+    menuData.splice(draggedIdx, 1);
+    var newTargetIdx = 0;
+    menuData.forEach(function(item, i) {
+      if (item.id === targetId) newTargetIdx = i;
+    });
+    menuData.splice(newTargetIdx + (targetIdx > dragSourceIdx ? 0 : 0), 0, draggedItem);
+  }
+}
+
+function getFilteredIndex(el) {
+  var cards = Array.from(document.querySelectorAll('#dish-grid .dish-card'));
+  return cards.indexOf(el);
+}
+
+function saveDishOrder() {
+  var cards = document.querySelectorAll('#dish-grid .dish-card');
+  var items = [];
+  cards.forEach(function(card, idx) {
+    var dishId = parseInt(card.getAttribute('data-dish-id'));
+    items.push({ id: dishId, position: idx });
+  });
+  fetch('/api/menu/reorder', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ items: items })
+  });
+}
+
+// ===== 价格微调（管理员，带防抖） =====
+var priceDebounceTimers = {};
+
+function adjustPrice(dishId, delta) {
+  var dish = null;
+  menuData.forEach(function(d) { if (d.id === dishId) dish = d; });
+  if (!dish) return;
+
+  var newPrice = Math.max(0, Math.round((dish.price + delta) * 100) / 100);
+  // 更新本地数据并重绘
+  dish.price = newPrice;
+  renderDishes();
+
+  // 防抖：快速连续点击时，等停止点击后再保存
+  if (priceDebounceTimers[dishId]) {
+    clearTimeout(priceDebounceTimers[dishId]);
+  }
+  priceDebounceTimers[dishId] = setTimeout(function() {
+    fetch('/api/menu/' + dishId, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ price: newPrice })
+    }).then(function(r) { return r.json(); }).then(function(d) {
+      if (d.ok) {
+        fetchMenu(); // 刷新确保同步
+      }
+    });
+  }, 800); // 800ms 防抖延迟
 }
 
 // ===== 购物车面板 =====

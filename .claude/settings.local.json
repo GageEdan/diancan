@@ -45,7 +45,11 @@
       "Bash(where python3 *)",
       "Bash(\"E:\\\\Program Files\\\\Python\\\\python.exe\" main.py)",
       "Bash(Invoke-RestMethod -Uri 'http://localhost:5000/api/menu' -Method GET)",
-      "Bash(ConvertTo-Json -Depth 5)"
+      "Bash(ConvertTo-Json -Depth 5)",
+      "Bash(Get-ChildItem *)",
+      "Bash(Start-Sleep *)",
+      "Bash(py -c \"from flask import Flask; print\\('flask ok'\\)\")",
+      "Bash(py main.py)"
     ]
   }
 }
