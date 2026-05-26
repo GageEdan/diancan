@@ -102,6 +102,14 @@ def init_db():
                     if stmt:
                         cur.execute(stmt)
                 conn.commit()
+
+                # 兼容旧表：补加可能缺失的列
+                try:
+                    cur.execute("ALTER TABLE order_items ADD COLUMN name VARCHAR(100) NOT NULL DEFAULT ''")
+                    conn.commit()
+                except Exception:
+                    pass  # 列已存在则跳过
+
             finally:
                 cur.close()
         finally:
