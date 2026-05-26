@@ -69,7 +69,13 @@
   }
   .order-card .order-user {
     font-weight: 700; font-size: 14px; color: var(--coral);
+    display: flex; align-items: center; gap: 6px;
   }
+  .order-avatar-img {
+    width: 24px; height: 24px; border-radius: 50%; object-fit: cover;
+    border: 1px solid #FFD4D4;
+  }
+  .order-avatar-fb { font-size: 16px; }
   .order-card .order-time {
     font-size: 11px; color: #bbb;
   }
@@ -464,7 +470,7 @@ function fetchOrders() {
     d.orders.forEach(function(o) {
       h += '<div class="order-card">';
       h += '<div class="order-top">';
-      h += '<span class="order-user">👤 ' + o.username + '</span>';
+      h += '<span class="order-user">' + (o.avatar ? '<img class="order-avatar-img" src="/static/avatars/' + o.avatar + '" alt="">' : '<span class="order-avatar-fb">👤</span>') + ' ' + o.username + '</span>';
       h += '<span class="order-time">' + (o.created_at || '') + '</span>';
       h += '</div>';
       h += '<div class="order-items">';

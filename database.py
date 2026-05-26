@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS menu_items (
     category_id INT NOT NULL,
     emoji VARCHAR(10) DEFAULT '🍽️',
     image VARCHAR(255) DEFAULT '',
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
@@ -106,6 +107,12 @@ def init_db():
                 # 兼容旧表：补加可能缺失的列
                 try:
                     cur.execute("ALTER TABLE order_items ADD COLUMN name VARCHAR(100) NOT NULL DEFAULT ''")
+                    conn.commit()
+                except Exception:
+                    pass  # 列已存在则跳过
+
+                try:
+                    cur.execute("ALTER TABLE menu_items ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1")
                     conn.commit()
                 except Exception:
                     pass  # 列已存在则跳过
@@ -359,6 +366,7 @@ def get_all_menu():
             SELECT m.id, m.name, m.price, c.name AS category, m.emoji, m.image
             FROM menu_items m
             JOIN categories c ON m.category_id = c.id
+            WHERE m.is_active = 1
             ORDER BY m.id
         """)
         rows = cur.fetchall()
@@ -456,7 +464,7 @@ def delete_menu_item(item_id):
     with get_db() as (conn, cur):
         if conn is None:
             raise RuntimeError('数据库连接不可用')
-        cur.execute("DELETE FROM menu_items WHERE id = %s", (item_id,))
+        cur.execute("UPDATE menu_items SET is_active = 0 WHERE id = %s", (item_id,))
         conn.commit()
 
 
@@ -508,6 +516,7 @@ def get_all_orders():
             result.append({
                 'id': o['id'],
                 'username': o.get('username', '未知用户'),
+                'avatar': o.get('avatar', ''),
                 'total_amount': float(o.get('total_amount', 0) or 0),
                 'status': o.get('status', 'pending'),
                 'created_at': o.get('created_at', ''),
@@ -519,7 +528,7 @@ def get_all_orders():
         if conn is None:
             return []
         cur.execute("""
-            SELECT o.id, u.username, o.total_amount, o.status, o.created_at
+            SELECT o.id, u.username, u.avatar, o.total_amount, o.status, o.created_at
             FROM orders o
             JOIN users u ON o.user_id = u.id
             ORDER BY o.id DESC
