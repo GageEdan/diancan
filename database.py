@@ -436,6 +436,8 @@ def create_order(user_id, total_amount, items, username=None):
         return new_id
 
     conn = get_conn()
+    if conn is None:
+        raise RuntimeError('数据库连接不可用')
     cur = conn.cursor()
     cur.execute(
         "INSERT INTO orders (user_id, total_amount) VALUES (%s, %s)",

@@ -242,10 +242,18 @@ def api_checkout():
     if not user:
         return jsonify({'ok': False, 'msg': '用户不存在'}), 404
 
-    create_order(user['id'], total, items, username=session['username'])
+    try:
+        create_order(user['id'], total, items, username=session['username'])
+    except Exception as e:
+        print(f'[错误] 创建订单失败: {e}')
+        return jsonify({'ok': False, 'msg': '订单提交失败，请稍后重试'}), 500
 
     username = session['username']
-    email_sent = send_order_email(username, items, total)
+    try:
+        email_sent = send_order_email(username, items, total)
+    except Exception as e:
+        print(f'[错误] 发送邮件失败: {e}')
+        email_sent = False
 
     return jsonify({
         'ok': True,

@@ -31,7 +31,15 @@
       "Bash(pip list *)",
       "Bash(Select-String -Pattern \"Flask|mysql|werkzeug\")",
       "Bash(powershell.exe *)",
-      "Bash(E:\\\\Program Files\\\\Python\\\\python.exe *)"
+      "Bash(E:\\\\Program Files\\\\Python\\\\python.exe *)",
+      "Bash(Start-Sleep -Seconds 3)",
+      "Bash(Get-Process python *)",
+      "Bash(Select-Object Id, ProcessName)",
+      "PowerShell(Get-Command *)",
+      "PowerShell(& \"E:\\\\Program Files\\\\Python\\\\python.exe\" -c \"from database import init_db; from config import DATA_DIR; import os; os.makedirs\\(DATA_DIR, exist_ok=True\\); init_db\\(\\); print\\('DB OK'\\)\" 2>&1)",
+      "PowerShell($env:FLASK_DEBUG = \"1\"; & \"E:\\\\Program Files\\\\Python\\\\python.exe\" \"C:\\\\Users\\\\15913\\\\Desktop\\\\jiaohu\\\\main.py\" 2>&1)",
+      "PowerShell($body = '{\"username\":\"skite\",\"password\":\"123456\"}'; $r = Invoke-WebRequest -Uri \"http://127.0.0.1:5000/api/login\" -Method POST -ContentType \"application/json\" -Body $body -SessionVariable sess 2>&1; $r.Content)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d[:2], ensure_ascii=False, indent=2\\)\\)\")"
     ]
   }
 }

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -29,7 +29,7 @@
   }
 
   /* ===== 主布局 ===== */
-  .main-wrap { display: flex; min-height: calc(100vh - 80px); }
+  .main-wrap { display: flex; min-height: calc(100vh - 80px); padding-bottom: 70px; }
 
   .content-area { flex: 1; padding: 20px; max-width: calc(100% - 400px); }
 
@@ -139,35 +139,65 @@
   }
   .qty-num.zero { color: #ccc; }
 
-  /* ===== 购物车侧栏 ===== */
+  /* ===== 购物车底部栏 ===== */
   .cart-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 199;
+    position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 199;
     opacity: 0; pointer-events: none; transition: opacity 0.3s;
   }
   .cart-overlay.open { opacity: 1; pointer-events: auto; }
 
-  .cart-panel {
-    position: fixed; top: 0; right: -420px; width: 390px; max-width: 88vw;
-    height: 100vh; z-index: 200;
-    background: #fff; box-shadow: -4px 0 30px rgba(0,0,0,0.12);
-    transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex; flex-direction: column;
-    border-radius: 24px 0 0 24px;
+  /* 底部折叠栏 */
+  .cart-bar {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+    background: #fff; box-shadow: 0 -4px 25px rgba(0,0,0,0.1);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 22px; cursor: pointer;
+    border-radius: 20px 20px 0 0;
+    transition: transform 0.3s, box-shadow 0.3s;
+    user-select: none;
   }
-  .cart-panel.open { right: 0; }
+  .cart-bar:hover { box-shadow: 0 -6px 30px rgba(255,107,107,0.18); }
+  .cart-bar.hidden { transform: translateY(100%); }
+  .cart-bar-left { display: flex; align-items: center; gap: 10px; }
+  .cart-bar-icon { font-size: 26px; position: relative; }
+  .cart-bar-icon .dot {
+    position: absolute; top: -4px; right: -6px;
+    background: var(--coral); color: #fff; font-size: 11px; font-weight: 900;
+    min-width: 20px; height: 20px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cart-bar-count { font-size: 14px; color: #888; font-weight: 600; }
+  .cart-bar-right { display: flex; align-items: center; gap: 8px; }
+  .cart-bar-total { font-weight: 900; font-size: 20px; color: var(--coral); }
+  .cart-bar-arrow {
+    font-size: 14px; color: #ccc; transition: transform 0.3s;
+  }
+  .cart-bar-arrow.up { transform: rotate(180deg); }
+
+  /* 展开面板 */
+  .cart-panel {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 201;
+    max-height: 55vh;
+    background: #fff; box-shadow: 0 -4px 30px rgba(0,0,0,0.15);
+    border-radius: 24px 24px 0 0;
+    display: flex; flex-direction: column;
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .cart-panel.open { transform: translateY(0); }
 
   .cart-header {
-    padding: 20px 22px; display: flex; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid #F5F0F0;
+    padding: 18px 22px; display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid #F5F0F0; flex-shrink: 0;
   }
   .cart-header h2 { font-size: 20px; font-weight: 900; }
   .cart-close { font-size: 24px; cursor: pointer; padding: 6px; color: #aaa; border: none; background: none; }
   .cart-close:hover { color: var(--coral); }
 
-  .cart-items { flex: 1; overflow-y: auto; padding: 16px 22px; }
-  .cart-empty { text-align: center; padding: 60px 20px; color: #ccc; }
-  .cart-empty .icon { font-size: 64px; display: block; margin-bottom: 12px; }
-  .cart-empty .text { font-size: 15px; }
+  .cart-items { flex: 1; overflow-y: auto; padding: 14px 22px; min-height: 80px; max-height: 30vh; }
+  .cart-empty { text-align: center; padding: 40px 20px; color: #ccc; }
+  .cart-empty .icon { font-size: 48px; display: block; margin-bottom: 8px; }
+  .cart-empty .text { font-size: 14px; }
 
   .cart-item {
     display: flex; align-items: center; gap: 12px; padding: 12px 0;
@@ -181,9 +211,10 @@
   .cart-item .c-qty-ctrl .qty-btn { width: 28px; height: 28px; font-size: 16px; }
 
   .cart-footer {
-    padding: 18px 22px; border-top: 2px solid #F5F0F0;
+    padding: 16px 22px; border-top: 2px solid #F5F0F0; flex-shrink: 0;
+    padding-bottom: env(safe-area-inset-bottom, 16px);
   }
-  .cart-total { display: flex; justify-content: space-between; margin-bottom: 14px; }
+  .cart-total { display: flex; justify-content: space-between; margin-bottom: 12px; }
   .cart-total .label { font-weight: 700; font-size: 16px; }
   .cart-total .value { font-weight: 900; font-size: 22px; color: var(--coral); }
 
@@ -382,11 +413,25 @@
 <!-- 购物车遮罩 -->
 <div class="cart-overlay" id="cart-overlay" onclick="toggleCart()"></div>
 
-<!-- 购物车面板 -->
+<!-- 购物车底部折叠栏 -->
+<div class="cart-bar" id="cart-bar" onclick="toggleCart()">
+  <div class="cart-bar-left">
+    <span class="cart-bar-icon">
+      🛒<span class="dot" id="cart-bar-dot">0</span>
+    </span>
+    <span class="cart-bar-count" id="cart-bar-count">0 件商品</span>
+  </div>
+  <div class="cart-bar-right">
+    <span class="cart-bar-total" id="cart-bar-total">¥0</span>
+    <span class="cart-bar-arrow" id="cart-bar-arrow">▲</span>
+  </div>
+</div>
+
+<!-- 购物车展开面板 -->
 <div class="cart-panel" id="cart-panel">
   <div class="cart-header">
     <h2>🛒 我的购物车</h2>
-    <button class="cart-close" onclick="toggleCart()">✕</button>
+    <button class="cart-close" onclick="event.stopPropagation(); toggleCart();">✕</button>
   </div>
   <div class="cart-items" id="cart-items"></div>
   <div class="cart-footer">
@@ -474,6 +519,9 @@ function updateCartBadge() {
   var total = 0;
   Object.values(cart).forEach(function(q) { total += q; });
   document.getElementById('cart-count').textContent = total;
+  document.getElementById('cart-bar-dot').textContent = total;
+  document.getElementById('cart-bar-count').textContent = total + ' 件商品';
+  document.getElementById('cart-bar-total').textContent = '¥' + getCartTotal();
 }
 function getCartTotal() {
   var sum = 0;
@@ -570,9 +618,18 @@ function changeQty(dishId, delta) {
 function toggleCart() {
   var panel = document.getElementById('cart-panel');
   var overlay = document.getElementById('cart-overlay');
+  var arrow = document.getElementById('cart-bar-arrow');
   var open = panel.classList.contains('open');
-  if (open) { panel.classList.remove('open'); overlay.classList.remove('open'); }
-  else { panel.classList.add('open'); overlay.classList.add('open'); renderCartItems(); }
+  if (open) {
+    panel.classList.remove('open');
+    overlay.classList.remove('open');
+    arrow.classList.remove('up');
+  } else {
+    panel.classList.add('open');
+    overlay.classList.add('open');
+    arrow.classList.add('up');
+    renderCartItems();
+  }
 }
 
 function renderCartItems() {
@@ -638,6 +695,9 @@ function checkout() {
     } else {
       toast(d.msg, 'error');
     }
+  })
+  .catch(function(e) {
+    toast('网络异常，请稍后重试~', 'error');
   });
 }
 
